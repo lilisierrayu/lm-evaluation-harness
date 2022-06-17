@@ -20,7 +20,7 @@ def cm3_completion(**kwargs):
         try:
             return json.loads(
                 requests.post(
-                    "http://100.97.89.139:6010/completions", json=kwargs
+                    "http://52.190.63.124:6011/completions", json=kwargs
                 )._content
             )
         except ValueError:
