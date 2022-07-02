@@ -1,0 +1,19 @@
+#!/bin/bash
+
+model_name=$1
+task="humaneval_generative"
+shift
+
+#model_name_rep=`echo $model_name | sed -r 's/\//-/g'`
+model_name_rep=`basename $model_name`
+
+echo $model_name_rep
+
+python -u main.py \
+  --model incoder \
+  --model_args pretrained=${model_name},generation_temperature=0.2 \
+  --device 0 \
+  --batch_size 1 \
+  --tasks $task \
+  $@ \
+  | tee expts/${model_name_rep}_${task}.out
