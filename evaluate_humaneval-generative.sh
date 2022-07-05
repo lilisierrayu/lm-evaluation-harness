@@ -9,9 +9,11 @@ model_name_rep=`basename $model_name`
 
 echo $model_name_rep
 
+export TOKENIZERS_PARALLELISM=false
+
 python -u main.py \
   --model incoder \
-  --model_args pretrained=${model_name},generation_temperature=0.2 \
+  --model_args pretrained=${model_name} \
   --device 0 \
   --batch_size 1 \
   --tasks $task \

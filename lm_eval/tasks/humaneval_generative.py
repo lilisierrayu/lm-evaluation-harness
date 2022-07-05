@@ -47,7 +47,6 @@ class HumanEvalGenerative(Task, abc.ABC):
 
     def construct_requests(self, doc, ctx):
         prompt = doc["prompt"]
-        print(f"prompt: {prompt}")
         return rf.greedy_until(prompt, self.STOP_WORDS)
 
     def process_results(self, doc, results):
