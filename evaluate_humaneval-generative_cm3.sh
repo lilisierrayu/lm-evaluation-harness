@@ -2,7 +2,6 @@
 
 model_name="cm3"
 task="humaneval_generative"
-shift
 
 #model_name_rep=`echo $model_name | sed -r 's/\//-/g'`
 model_name_rep="${model_name}_6-2"
