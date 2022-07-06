@@ -12,6 +12,7 @@ class HFLM(BaseLM):
         subfolder=None,
         tokenizer=None,
         batch_size=1,
+        generation_temperature=0.0,
     ):
         super().__init__()
 
@@ -40,24 +41,19 @@ class HFLM(BaseLM):
         ).to(self.device)
         self.gpt2.eval()
 
+        tokenizer_name = pretrained if tokenizer is None else tokenizer
         # pretrained tokenizer for neo is broken for now so just hard-coding this to gpt2
-        self.tokenizer = transformers.AutoTokenizer.from_pretrained(
-            pretrained if tokenizer is None else tokenizer,
+        tokenizer = transformers.AutoTokenizer.from_pretrained(
+            tokenizer_name,
             revision=revision,
             subfolder=subfolder,
         )
-
-        assert isinstance(
-            self.tokenizer,
-            (
-                transformers.GPT2Tokenizer,
-                transformers.GPT2TokenizerFast,
-                transformers.T5Tokenizer,
-                transformers.T5TokenizerFast,
-            ),
-        ), "this tokenizer has not been checked for compatibility yet!"
+        self.check_tokenizer(tokenizer, tokenizer_name)
+        self.tokenizer = tokenizer
 
         self.vocab_size = self.tokenizer.vocab_size
+
+        self.generation_temperature = generation_temperature
 
         if isinstance(
             self.tokenizer, (transformers.GPT2Tokenizer, transformers.GPT2TokenizerFast)
@@ -76,6 +72,18 @@ class HFLM(BaseLM):
         # gpus = torch.cuda.device_count()
         # if gpus > 1:
         #     self.gpt2 = nn.DataParallel(self.gpt2)
+
+    def check_tokenizer(self, tokenizer, tokenizer_name):
+        assert isinstance(
+            self.tokenizer,
+            (
+                transformers.GPT2Tokenizer,
+                transformers.GPT2TokenizerFast,
+                transformers.T5Tokenizer,
+                transformers.T5TokenizerFast,
+            ),
+        ), "this tokenizer has not been checked for compatibility yet!"
+
 
     @property
     def eot_token_id(self):
@@ -119,13 +127,12 @@ class HFLM(BaseLM):
         logits returned from the model
         """
         with torch.no_grad():
-            return self.gpt2(inps)[0][:, :, :50257]
+            return self.gpt2(inps)[0][:, :, :self.vocab_size]
 
     def _model_generate(self, context, max_length, eos_token_id):
         return self.gpt2.generate(
             context, max_length=max_length, eos_token_id=eos_token_id, do_sample=False
         )
-
 
 # for backwards compatibility
 GPT2LM = HFLM

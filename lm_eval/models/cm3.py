@@ -8,7 +8,7 @@ from tqdm import tqdm
 import time
 
 
-def cm3_completion(**kwargs):
+def cm3_completion(api_key=None, **kwargs):
     """Query CM3 API for completion.
 
     Retry with back-off until they respond
@@ -18,9 +18,14 @@ def cm3_completion(**kwargs):
     backoff_time = 3
     while True:
         try:
+            headers = {}
+            if api_key is not None:
+                headers['Authorization'] = f'Bearer {api_key}'
             return json.loads(
                 requests.post(
-                    "http://52.190.63.124:6011/completions", json=kwargs
+                    #"http://52.190.63.124:6011/completions", json=kwargs
+                    "http://localhost:8011/completions", json=kwargs,
+                    headers=headers,
                 )._content
             )
         except ValueError:
@@ -34,7 +39,7 @@ def cm3_completion(**kwargs):
 class CM3LM(BaseLM):
     REQ_CHUNK_SIZE = 20
 
-    def __init__(self, truncate=False):
+    def __init__(self, truncate=False, api_key="dummy_key"):
         """
         :param truncate: bool
             Truncate input if too long (if False and input is too long, throw error)
@@ -52,6 +57,7 @@ class CM3LM(BaseLM):
         self.end_of_text_token_id = self.tokenizer.convert_tokens_to_ids(
             ["<|endoftext|>"]
         )[0]
+        self.api_key = api_key
 
     @property
     def eot_token_id(self):
@@ -117,6 +123,7 @@ class CM3LM(BaseLM):
                 max_tokens=0,
                 temperature=0.5,
                 logprobs=10,
+                api_key=self.api_key,
             )
 
             for resp, ctxlen, (cache_key, context_enc, continuation_enc) in zip(
@@ -164,18 +171,31 @@ class CM3LM(BaseLM):
             for context, _ in chunk:
                 context_enc = self.tok_encode(context)
                 inp = context_enc[-(self.max_length - self.max_gen_toks) :]
-                inps.append(inp)
-
+                inps.append(self.tok_decode(inp))
+            
+            # TODO: until, in the API, can only be a current token. verify whether multiple single-word tokens are allowed
+            if isinstance(until, str):
+                until = [until]
+            if isinstance(until, list) and len(until) == 1:
+                if len(self.tok_encode(until[0])) == 1:
+                    stop=until[0]
+            else:
+                stop = None
+            
             response = cm3_completion(
                 prompt=inps,
                 max_tokens=self.max_gen_toks,
                 temperature=0.0,
                 logprobs=10,
-                stop=until,
+                api_key=self.api_key,
+                stop=stop,
             )
 
             for resp, (context, until_) in zip(response["choices"], chunk):
                 s = resp["text"]
+                # print("--response:--")
+                # print(s)
+                # print("-------------")
 
                 for term in until_:
                     s = s.split(term)[0]

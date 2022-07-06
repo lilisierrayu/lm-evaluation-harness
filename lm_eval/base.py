@@ -346,14 +346,18 @@ class BaseLM(LM):
             if isinstance(until, str):
                 until = [until]
 
-            (primary_until,) = self.tok_encode(until[0])
+            primary_until_encoded = self.tok_encode(until[0])
+            if len(primary_until_encoded) > 1:
+                primary_until = None
+            else:
+                (primary_until,) = primary_until_encoded
 
             context_enc = torch.tensor(
                 [self.tok_encode(context)[self.max_gen_toks - self.max_length :]]
             ).to(self.device)
 
             cont = self._model_generate(
-                context_enc, context_enc.shape[1] + self.max_gen_toks, primary_until
+                context_enc, context_enc.shape[1] + self.max_gen_toks, primary_until,
             )
 
             s = self.tok_decode(cont[0].tolist()[context_enc.shape[1] :])
