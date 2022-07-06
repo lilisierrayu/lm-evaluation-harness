@@ -172,15 +172,23 @@ class CM3LM(BaseLM):
                 context_enc = self.tok_encode(context)
                 inp = context_enc[-(self.max_length - self.max_gen_toks) :]
                 inps.append(self.tok_decode(inp))
-
+            
+            # TODO: until, in the API, can only be a current token. verify whether multiple single-word tokens are allowed
+            if isinstance(until, str):
+                until = [until]
+            if isinstance(until, list) and len(until) == 1:
+                if len(self.tok_encode(until[0])) == 1:
+                    stop=until[0]
+            else:
+                stop = None
+            
             response = cm3_completion(
                 prompt=inps,
                 max_tokens=self.max_gen_toks,
                 temperature=0.0,
                 logprobs=10,
-                #stop=until,
                 api_key=self.api_key,
-                # stop=until,
+                stop=stop,
             )
 
             for resp, (context, until_) in zip(response["choices"], chunk):
