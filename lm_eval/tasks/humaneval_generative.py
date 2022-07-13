@@ -1,52 +1,30 @@
+"""
+Evaluating Large Language Models Trained on Code"
+https://arxiv.org/abs/2107.03374
+
+The HumanEval dataset of python functions and descriptions described in the
+Codex paper.
+
+This code depends on the fork of human-eval linked below, which exposes individual
+function evaluation.
+
+Homepage: https://github.com/dpfried/human-eval
+"""
+
 import abc
 import re
 
-from lm_eval.base import rf, Task
+from lm_eval.base import rf
 from datasets import load_dataset
 from lm_eval.metrics import weighted_mean
+from lm_eval.tasks.humaneval_ppl import HumanEval
 
-
-class HumanEvalGenerative(Task, abc.ABC):
-    VERSION = 0
-
-    DATASET_PATH = "openai_humaneval"
-    DATASET_NAME = DATASET_PATH
-
+class HumanEvalGenerative(HumanEval, abc.ABC):
     STOP_WORDS = ["\nclass", "\ndef", "\n#", "\nif"]
-
-    def fewshot_description(self):
-        # TODO: figure out fewshot description
-        return ""
-
-    def has_validation_docs(self):
-        return True
-
-    def has_train_docs(self):
-        return False
-
-    def has_training_docs(self):
-        return False
-
-    def has_test_docs(self):
-        return False
-    
-    def validation_docs(self):
-        yield from self.dataset["test"]
-                
-    def train_docs(self):
-        pass
-
-    def test_docs(self):
-        pass
-
-    def doc_to_text(self, doc):
-        return ""
-
-    def doc_to_target(self, doc):
-        return ""
-
     def construct_requests(self, doc, ctx):
+
         prompt = doc["prompt"]
+        prompt = prompt.rstrip()
         return rf.greedy_until(prompt, self.STOP_WORDS)
 
     def process_results(self, doc, results):

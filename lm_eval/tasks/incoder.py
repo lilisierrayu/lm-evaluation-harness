@@ -1,3 +1,12 @@
+"""
+InCoder: A Generative Model for Code In-Filling and Synthesis
+https://arxiv.org/abs/2204.05999
+
+The validation corpus used in training the InCoder-1B and 6B models (not publicly released)
+
+Homepage: https://sites.google.com/view/incoder-code-models
+"""
+
 import os
 import re
 import json
@@ -22,7 +31,7 @@ class Incoder(PerplexityTask, abc.ABC):
     MAX_TOKENS = None
     TOKENIZER = None
 
-    def download(self):
+    def download(self, *args, **kwargs):
         self.lexer = lexers.get_lexer_by_name(self.LANG_NAME.lower())
 
     def fewshot_description(self):
@@ -79,6 +88,10 @@ class Incoder(PerplexityTask, abc.ABC):
     def count_words(self, doc):
         # count number of words in *original doc before detokenization*
         return len(list(self.lexer.get_tokens(doc)))
+
+    @property
+    def max_length(self):
+        return 2048
 
 class IncoderPython(Incoder):
     LANG_NAME = "Python"
