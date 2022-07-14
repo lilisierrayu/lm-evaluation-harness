@@ -21,13 +21,15 @@ def cm3_completion(api_key=None, **kwargs):
             headers = {}
             if api_key is not None:
                 headers['Authorization'] = f'Bearer {api_key}'
-            return json.loads(
+            response = json.loads(
                 requests.post(
+                    "http://52.190.63.124:6014/completions", json=kwargs,
                     #"http://52.190.63.124:6011/completions", json=kwargs
-                    "http://localhost:8011/completions", json=kwargs,
+                    #"http://localhost:8011/completions", json=kwargs,
                     headers=headers,
                 )._content
             )
+            return response
         except ValueError:
             import traceback
 
@@ -58,6 +60,10 @@ class CM3LM(BaseLM):
             ["<|endoftext|>"]
         )[0]
         self.api_key = api_key
+
+    @property
+    def additional_stop_words(self):
+        return ["<|/"]
 
     @property
     def eot_token_id(self):
@@ -197,7 +203,7 @@ class CM3LM(BaseLM):
                 # print(s)
                 # print("-------------")
 
-                for term in until_:
+                for term in until_ + self.additional_stop_words:
                     s = s.split(term)[0]
 
                 # partial caching
