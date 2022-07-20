@@ -50,6 +50,9 @@ from . import blimp
 from . import asdiv
 from . import gsm8k
 from . import storycloze
+from . import humaneval_generative
+from . import humaneval_ppl
+from . import incoder
 
 ########################################
 # Translation tasks
@@ -283,6 +286,10 @@ TASK_REGISTRY = {
     # "storycloze_2016": storycloze.StoryCloze2016,
     # "storycloze_2018": storycloze.StoryCloze2018,
     # "sat": sat.SATAnalogies,
+
+    "humaneval_perplexity": humaneval_ppl.HumanEvalPerplexity,
+    "humaneval_generative": humaneval_generative.HumanEvalGenerative,
+    "incoder_python": incoder.IncoderPython,
 }
 
 
