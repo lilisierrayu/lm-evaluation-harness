@@ -53,6 +53,7 @@ from . import storycloze
 from . import humaneval_generative
 from . import humaneval_ppl
 from . import incoder
+from . import codexglue_summarization
 
 ########################################
 # Translation tasks
@@ -290,6 +291,7 @@ TASK_REGISTRY = {
     "humaneval_perplexity": humaneval_ppl.HumanEvalPerplexity,
     "humaneval_generative": humaneval_generative.HumanEvalGenerative,
     "incoder_python": incoder.IncoderPython,
+    "codexglue_summarization": codexglue_summarization.CodexglueSummarization,
 }
 
 

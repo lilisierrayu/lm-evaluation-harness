@@ -115,8 +115,14 @@ class HFLM(BaseLM):
     def tok_encode(self, string: str):
         return self.tokenizer.encode(string, add_special_tokens=False)
 
+    def batch_tok_encode(self, strings):
+        return self.tokenizer(strings, padding=True, add_special_tokens=True).input_ids
+
     def tok_decode(self, tokens):
         return self.tokenizer.decode(tokens)
+
+    def batch_tok_decode(self, ids):
+        return self.tokenizer.batch_decode(ids)
 
     def _model_call(self, inps):
         """

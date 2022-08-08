@@ -203,3 +203,8 @@ def run_task_tests(task_list: List[str]):
         raise ValueError(
             f"Not all tests for the specified tasks ({task_list}) ran successfully! Error code: {pytest_return_val}"
         )
+
+
+def all_equal(xs):
+    x = next(iter(xs))
+    return all(y == x for y in xs)

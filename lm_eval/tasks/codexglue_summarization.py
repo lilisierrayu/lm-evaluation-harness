@@ -108,7 +108,7 @@ def compute_bleu(gold_and_predicted_items: List[Tuple[str, str]]):
         gold, *rest = gold_str.strip().split('\t')
         if len(rest) > 0:
             print(f"warning: gold instance {ix} contains a tab; ignoring text after")
-        gold_map[ix] = [codexglue_summarization_evaluator.splitPuncts(pred.strip().lower())]
+        gold_map[ix] = [codexglue_summarization_evaluator.splitPuncts(gold.strip().lower())]
   
         pred, *rest = predicted_str.strip().split('\t')
         if len(rest) > 0:
@@ -120,7 +120,8 @@ def compute_bleu(gold_and_predicted_items: List[Tuple[str, str]]):
 class CodexglueSummarization(Task, abc.ABC):
     from mosestokenizer import MosesDetokenizer
     VERSION = 0
-    DATASET_PATH = "code_x"
+    DATASET_PATH = "code_x_glue_ct_code_to_text"
+    LANGUAGE = "python"
     DATASET_NAME = DATASET_PATH
 
     STOP_WORDS = ['"""', '    """']
@@ -133,9 +134,12 @@ class CodexglueSummarization(Task, abc.ABC):
 
     detokenize = MosesDetokenizer("en")
 
+    def download(self, data_dir, cache_dir, download_mode):
+        self.dataset = load_dataset(self.DATASET_PATH, self.LANGUAGE, data_dir=data_dir, cache_dir=cache_dir, download_mode=download_mode)
+
     @classmethod
     def postprocess_model_output(cls, model_output: str):
-        docstr_one_line = model_output.split("\\n")[0].strip()
+        docstr_one_line = model_output.strip().split("\n")[0].strip()
         return docstr_one_line
 
     @classmethod
@@ -173,7 +177,7 @@ class CodexglueSummarization(Task, abc.ABC):
         :return: Iterable[obj]
             A iterable of any object, that doc_to_text can handle
         """
-        yield from self.dataset["python"]["test"]
+        yield from self.dataset["test"]
 
     def should_decontaminate(self):
         return True
@@ -200,7 +204,6 @@ class CodexglueSummarization(Task, abc.ABC):
         completion = results[0]
         gold = self.postprocess_reference(doc)
         pred = self.postprocess_model_output(completion)
-
         ref_pred = (gold, pred)
 
         # following translation.py:

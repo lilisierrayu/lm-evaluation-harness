@@ -26,7 +26,6 @@ The reason for breaking the BLEU computation into three phases cook_refs(), cook
 import sys, math, re, xml.sax.saxutils
 import subprocess
 import os
-from typing
 
 # Added to bypass NIST-style pre-processing of hyp and ref files -- wade
 nonorm = 0

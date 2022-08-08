@@ -329,7 +329,7 @@ class BaseLM(LM):
 
         return re_ord.get_original(res)
 
-    def greedy_until(self, requests):
+    def greedy_until(self, requests, disable_tqdm=False):
         # TODO: implement fully general `until` that handles until that are
         #       multiple tokens or that span multiple tokens correctly
 
@@ -342,7 +342,13 @@ class BaseLM(LM):
 
         re_ord = utils.Reorderer(requests, _collate)
 
-        for context, until in tqdm(re_ord.get_reordered()):
+        for chunk in utils.chunks(
+            tqdm(re_ord.get_reordered(), disable=disable_tqdm), self.batch_size
+        ):
+            contexts, untils = (list(l) for l in zip(*chunk))
+            assert utils.all_equal(untils)
+
+            until = untils[0]
             if isinstance(until, str):
                 until = [until]
 
@@ -352,23 +358,26 @@ class BaseLM(LM):
             else:
                 (primary_until,) = primary_until_encoded
 
-            context_enc = torch.tensor(
-                [self.tok_encode(context)[self.max_gen_toks - self.max_length :]]
-            ).to(self.device)
+            if len(contexts) > 1 and self.tokenizer.padding_side != 'left':
+                raise NotImplementedError("must have tokenizer padding_side='left' for batched generation")
+            context_enc = torch.tensor(self.batch_tok_encode(contexts)[self.max_gen_toks - self.max_length :]).to(self.device)
 
-            cont = self._model_generate(
+            cont_batch = self._model_generate(
                 context_enc, context_enc.shape[1] + self.max_gen_toks, primary_until,
             )
 
-            s = self.tok_decode(cont[0].tolist()[context_enc.shape[1] :])
+            decoded = []
+            for cont, context, until in zip(cont_batch, contexts, untils):
+                s = self.tok_decode(cont.tolist()[context_enc.shape[1] :])
 
-            for term in until:
-                s = s.split(term)[0]
+                for term in until:
+                    s = s.split(term)[0]
+                decoded.append(s)
 
-            # partial caching
-            self.cache_hook.add_partial("greedy_until", (context, until), s)
+                # partial caching
+                self.cache_hook.add_partial("greedy_until", (context, until), s)
 
-            res.append(s)
+            res.extend(decoded)
 
         return re_ord.get_original(res)
 
