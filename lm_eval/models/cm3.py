@@ -21,14 +21,18 @@ def cm3_completion(api_key=None, **kwargs):
             headers = {}
             if api_key is not None:
                 headers['Authorization'] = f'Bearer {api_key}'
+            print(kwargs)
+            print(headers)
             response = json.loads(
                 requests.post(
-                    "http://52.190.63.124:6014/completions", json=kwargs,
+                    "http://52.190.63.124:6015/v1/engines/175b/completions", json=kwargs,
+                    # "http://52.190.63.124:6014/completions", json=kwargs,
                     #"http://52.190.63.124:6011/completions", json=kwargs
                     #"http://localhost:8011/completions", json=kwargs,
                     headers=headers,
                 )._content
             )
+            print(response)
             return response
         except ValueError:
             import traceback
@@ -39,9 +43,11 @@ def cm3_completion(api_key=None, **kwargs):
 
 
 class CM3LM(BaseLM):
-    REQ_CHUNK_SIZE = 20
+    # REQ_CHUNK_SIZE = 20
+    # REQ_CHUNK_SIZE = 1
+    REQ_CHUNK_SIZE = 2
 
-    def __init__(self, truncate=False, api_key="dummy_key"):
+    def __init__(self, truncate=False, api_key="demo"):
         """
         :param truncate: bool
             Truncate input if too long (if False and input is too long, throw error)
